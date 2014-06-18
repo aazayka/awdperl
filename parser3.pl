@@ -1,5 +1,7 @@
 use strict;
 use LWP::Simple;
+use Encode;
+use utf8;
 
 my $html = get("http://forum.awd.ru/viewforum.php?f=60")
            or die "Could not fetch NWS CSV page.";
@@ -18,30 +20,19 @@ while (my $token = $p->get_tag("dt")) {
         my $topic_link = $links->[1]{href};
 
         while (my $dates = $p->get_tag("span")) {
-          print MYFILE "    SPAN START\n";
-          print $dates->[0];
-          print "\n";
-          print $dates->[1];
-          print "\n";
-          print $dates->[2];
-          print "\n";
-          print $dates->[3];
-          print "\n";
-
           if ($dates->[1]{"class"} eq "left-box") {
-            print MYFILE $p->get_text("/span");
-            print MYFILE "\n";
+		    my $span_text = $p->get_trimmed_text("/span");
+            if (index($span_text, "Вчера") != -1 || index($span_text, "Сегодня") != -1) {
+              print MYFILE $topic_name || ' - ' || $topic_link;
+              print MYFILE "\n";
+            }
           }
           print MYFILE "    span end\n";
         }
       }
-      print MYFILE "  LINKS end\n";
+     print MYFILE "  LINKS end\n";
     }
   print MYFILE "TD end\n";
-
-#    my $url = $token->[1]{href} || "-";
-#    my $text = $p->get_trimmed_text("/a");
-#    print "$url\t$text\n";
 }
 
 close (MYFILE);
