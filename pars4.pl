@@ -38,13 +38,15 @@ sub a_end_handler
     $text =~ s/\s+$//;
     $text =~ s/\s+/ /g;
     $topics{$new_topic} = $text;
-#    print "T text\n";
+    print " T text ";
 
 #    $self->handler("text", undef);
 #    $self->handler("start", \&a_start_handler);
 #    $self->handler("end", undef);
+    $self->handler("text", undef);
     $self->handler(start  => \&span_start_handler, 'self,tagname,attr' );
 
+    print "A end \n"
 }
 
 sub span_start_handler {
@@ -52,21 +54,17 @@ sub span_start_handler {
 #    return unless $tag eq "span";
 #    return unless $attr->{class} eq 'left-box';
 
-    print "Span start  ";
-    $self->handler("text", undef);
-    $self->handler("start", \&a_start_handler);
-    $self->handler("end", undef);
+    print " Span start  ";
 
-#    $self->handler(end   => \&span_end_handler, "self,tagname");
+    $self->handler(end   => \&span_end_handler, "self,tagname");
 
   }
 
 sub span_end_handler {
     my($self, $tag, $attr) = @_;
-    return unless $tag eq "span";
 
     print "  Span - end\n";
-    $self->handler("text", undef);
+
     $self->handler("start", \&a_start_handler);
     $self->handler("end", undef);
 
