@@ -57,13 +57,26 @@ while (my $token = $p->get_tag("dt", "a", "span")) {
 			$topic_link = "";
 			$topic_name = "";
 		}
-
 	}
 }
 
-# while (($key, $value) = each(%new_topics)) {
-	# print "$key is $value\n";
-# }
-
-
 close (MYFILE);
+
+# first, create your message
+use Email::MIME;
+my $message = Email::MIME->create(
+  header_str => [
+    From    => 'you@example.com',
+    To      => 'friend@example.com',
+    Subject => 'Happy birthday!',
+  ],
+  attributes => {
+    encoding => 'quoted-printable',
+    charset  => 'ISO-8859-1',
+  },
+  body_str => "Happy birthday to you!\n",
+);
+
+# send the message
+use Email::Sender::Simple qw(sendmail);
+sendmail($message);
