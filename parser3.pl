@@ -2,11 +2,18 @@ use strict;
 use LWP::Simple;
 use Encode;
 use utf8;
+use HTML::TokeParser;
+use MIME::Lite;
+
+my $smtp_server = 'smtp.mail.ru';
+my $from = '*****@mail.ru';
+my $to = 'aazayka@mail.ru;bulidze@gmail.com';
+my $pass = '*****';
+
 
 my $html = get("http://forum.awd.ru/viewforum.php?f=60")
            or die "Could not fetch NWS CSV page.";
 
-use HTML::TokeParser;
 my $key;
 my $value;
 my %already_sended;
@@ -18,11 +25,6 @@ while (<MYFILE>) {
 	($key, $value) = split("\t");
 	$already_sended{$key} = $value;
  }
-
- # while (($key, $value) = each(%already_sended)) {
-	 # print "$key is $value\n";
-# } 
-
 
 my $p = HTML::TokeParser->new( \$html );
 
@@ -45,8 +47,8 @@ while (my $token = $p->get_tag("dt", "a", "span")) {
 		}
 	} elsif ($check_link && $token->[0] eq "span" && $token->[1]{class} eq "left-box") {
 		my $span_text = $p->get_trimmed_text("/span");
-		if (
-				index($span_text, "Сегодня") != -1
+		if ( 
+			 index($span_text, "Сегодня") != -1
 			 || index($span_text, "минут") != -1
 			 || index($span_text, "секунд") != -1
 			 || index($span_text, "Вчера") != -1 
@@ -62,21 +64,18 @@ while (my $token = $p->get_tag("dt", "a", "span")) {
 
 close (MYFILE);
 
-# first, create your message
-use Email::MIME;
-my $message = Email::MIME->create(
-  header_str => [
-    From    => 'you@example.com',
-    To      => 'friend@example.com',
-    Subject => 'Happy birthday!',
-  ],
-  attributes => {
-    encoding => 'quoted-printable',
-    charset  => 'ISO-8859-1',
-  },
-  body_str => "Happy birthday to you!\n",
-);
+if (scalar(keys %new_topics) > 0) {
+	my $message;
+	while (($key, $value) = each(%new_topics)) {
+	  $message .= "<a href='http://forum.awd.ru/$key'>$value</a></br>\n";
+	}
+	my $msg = MIME::Lite->new(
+					From     => $from ,
+					To       => $to ,
+					Subject  => 'New topics from awd.ru',
+					Type    => 'text/html; charset=UTF-8',
+					Data    => encode("utf8", $message));
 
-# send the message
-use Email::Sender::Simple qw(sendmail);
-sendmail($message);
+	$msg->send( 'smtp' , $smtp_server , AuthUser=> $from , AuthPass=> $pass);
+# , Debug=>4	
+}
